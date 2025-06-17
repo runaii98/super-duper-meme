@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 4L20 28H4L12 4Z" fill="#1cfeba"/>
+  <path d="M32 8C32 12.4183 28.4183 16 24 16C19.5817 16 16 12.4183 16 8C16 3.58172 19.5817 0 24 0C28.4183 0 32 3.58172 32 8Z" fill="#1cfeba"/>
+  <text x="40" y="22" fill="white" font-family="system-ui" font-weight="bold" font-size="20">ComfyUI</text>
+</svg> 
