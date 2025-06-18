@@ -6,6 +6,7 @@ const { createAwsSecurityGroup, createGcpFirewallRule, authorizeMoreAwsRules, re
 const { EC2Client } = require('@aws-sdk/client-ec2');
 const credentialsManager = require('./vm_allocation_engine/credentials_manager');
 const { getVmMetrics, setupAwsVmMonitoring, setupGcpVmMonitoring } = require('./vm_monitoring_manager');
+const chalk = require('chalk');
 
 // New routes
 const instanceInfoRoutes = require('./routes/instance_info_routes');
@@ -666,7 +667,59 @@ app.post('/api/v1/instances/:instanceId/stop/:provider', async (req, res) => {
     }
 });
 
-// --- Start the server ---
-app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-}); 
+// --- API Endpoint for Deleting Firewall Rules ---
+app.delete('/api/v1/delete-firewall-rule', async (req, res) => {
+    // ... (endpoint code remains the same)
+});
+
+/**
+ * Starts the server after performing critical startup checks.
+ * This function ensures that credentials are valid before accepting connections.
+ */
+const startServer = async () => {
+    console.log('Performing startup credential check...');
+    try {
+        const credentialStatus = await credentialsManager.checkCredentials();
+        
+        // Log status for all providers
+        if (credentialStatus.aws) {
+            console.log('✅ AWS credentials are valid.');
+        } else {
+            console.log('❌ AWS credentials are not valid or not found.');
+        }
+
+        if (credentialStatus.gcp) {
+            console.log('✅ GCP credentials are valid.');
+        } else {
+            console.log('❌ GCP credentials are not valid or not found.');
+        }
+
+        // Check if at least one provider is available
+        if (!credentialStatus.aws && !credentialStatus.gcp) {
+            console.error(chalk.red.bold('\n[FATAL ERROR] No valid cloud provider credentials found. The server cannot operate.'));
+            console.error(chalk.red('Please ensure at least one set of credentials (for AWS or GCP) is correctly configured.'));
+            console.error(chalk.red('Exiting...'));
+            process.exit(1); // Exit if no providers are configured
+        }
+
+        if (!credentialStatus.aws || !credentialStatus.gcp) {
+             console.warn(chalk.yellow('\n⚠️  Warning: Credentials for one or more cloud providers are missing or invalid. Functionality for the affected providers will be disabled.'));
+        }
+
+        // Start listening for connections only after successful checks
+        app.listen(PORT, () => {
+            console.log(chalk.green.bold(`\n🚀 Server listening on port ${PORT}`));
+        }).on('error', (err) => {
+            // Handle server-specific errors like EADDRINUSE
+            console.error(chalk.red.bold(`\n[SERVER ERROR] Failed to start server:`), err.message);
+            process.exit(1);
+        });
+
+    } catch (error) {
+        console.error(chalk.red.bold('\n[FATAL ERROR] An unexpected error occurred during server startup:'), error);
+        process.exit(1);
+    }
+};
+
+// --- Start the Server ---
+startServer(); 
