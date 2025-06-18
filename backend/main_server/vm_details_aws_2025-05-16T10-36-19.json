@@ -1,0 +1,144 @@
+{
+  "success": true,
+  "provider": "AWS",
+  "instanceId": "i-0ce19b80e0c390d5b",
+  "instanceName": "test-vm-aws-2025-05-16T10-36-16",
+  "status": "pending",
+  "keyPairName": "server-generated-key-1747391777103",
+  "publicIpAddress": null,
+  "privateIpAddress": "172.31.90.146",
+  "privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7BNcOicIzC7HE\npTSvRRAJ6yfcl1uhk8XpWzxHP2SUXrBogVqXRDH9+XhLVup4ENlHCe59hNxyxsws\nBtcazxTXBETp0vgJFOjDg+TKRZ2M/qKZyWyw64URIBLsX5Jjequ/osjnPSfKOxf+\ngfohzBJ2rupsjg1Q+ZgQwJFSuFxcGTlHEWv5Kdz8J3n6RxY6W24Txvo//cgByfud\n1TEzEZ9BkvIDEo0SpXYovwRjyVbrNLAxb+r43EcyVcTWG9LuBXy+/0TBCJ1fnfd4\nLp5PMjIIHu89XsYDhaRSCoOrJeVr9MOxQXam0j6mAW5erWpVWv03u5KmoxV/Ocb2\n/ppxuhwBAgMBAAECggEADd4UF/T2lGQ9rwlvWz9pgEwdL/yoM9Zk4pgcOONA5nCR\nWk/HLiLFezc8UzJ+HzTj9kzMpVGMqtUbZCNbYBadYrvjY/GRE1P8gNeUR5G7Fu6g\naNC4XB5msahOxui8+TPqLYMDrIPgIgfY5bYbxwBJGTRWAoJ+XHQEMYUknCflWgMj\nUPIHQmaVPyUdLPz6FYASBe2kGqlGTwBEjmTSmNwZYlHPDVZoUpZZ7NoJWRdRvOeo\n1dMYUcHQuwjG7fKptEWC6dyWwhqUhV6bV87D7fxZP/SFEv+cw6CHRtLuytqFYvGX\nRO/GpJf55M5M/ayaRurNJyr2i7D0oQkDSqxgFCapbQKBgQDlm0lAOV1rumPLjp0u\nUG+oItbWPKCQ0/hfTYP8vJpdx3oHYmYgtEEtPmOq3W93hvHekIaVXrpJRLOoEMdd\nffcte4mvUKbyfRW0nFqlze71tpo5phyCrMwz1dnH9Uf04TvRABzri1+CmNOrvpl4\n8pHFgRFu8GIt/oFlV7TAJO9UxQKBgQDQhE+vyh1QqsQkl7jT9C9yjLqQYparHcGe\nj8jjfmEeGSTVTWTWM7HXaC8Ca+SOSMWrr+KG2hm2jjndumGCxgERjUfViii26V+1\ncgCl3lG/4wbUkL0cW0dl3oTEsdnn4MMl15wInk+MvmHOF9pQb6GaeLP/MmxZE2Kq\n+i6yRoB2DQKBgQCleqpraCylVJtR/MHZvE0Mz7cohl9uoeaywQosH73dcsPHCKr0\nTRVgR0PLxHXunko5js4AX1pBLguRSC53ei6oEA4mVSlNQMtg9QL71pSvcGBsxgRs\nRZ+SiEDCNUwb+CyFL+Cn/jXiyMRdViwEGEbpImFvJD6OSYv2fySdCsGWxQKBgHDQ\nxVR04/t7CPhLZmK24Nz3KxFnZeFbDiC95pC/Fch1Diqh3wbNnVDQO27x9QzObrR/\nSu5vHi5ZMRG3/34DpxxZ9h2gzHp6NaAz+AnGCTDqog1r6gVnlW+WPvs0xpLgVnUo\n/HDlRmD9uGkLGsEeRK8Q00Ilg92F0YJ0LcOixWoZAoGAWUB28Zi5zDCOL5lju8PL\nTo3K4wazBLFD9JKxSa+M+fjp+i8w4K79jN6MJSHWk3ZTzC3lzi12rGXIi69XOuf2\njiM9z4/T/71QwlVUA2JehmansvUhP1glRIjmyCS5o+z+smNRj6sqL+udkfa7OesV\nL8mr723QclHkZBZ8dpvxMgs=\n-----END PRIVATE KEY-----\n",
+  "note": "IMPORTANT: The privateKeyPem should be saved immediately by the client and not stored long-term by this server. Public IP might take a moment to become active.",
+  "details": {
+    "instanceName": "test-vm-aws-2025-05-16T10-36-16",
+    "instanceType": "t2.micro",
+    "imageId": "ami-0fc5d935ebf8bc3bc",
+    "region": "us-east-1",
+    "availabilityZone": "us-east-1a",
+    "subnetId": "subnet-039a96af3e6c16f02",
+    "vpcId": "vpc-0e3dab85475bd9e61",
+    "rawAwsResponse": {
+      "Architecture": "x86_64",
+      "BlockDeviceMappings": [],
+      "ClientToken": "84c46e09-753c-48ea-b054-9cb43a4e399e",
+      "EbsOptimized": false,
+      "EnaSupport": true,
+      "Hypervisor": "xen",
+      "NetworkInterfaces": [
+        {
+          "Attachment": {
+            "AttachTime": "2025-05-16T10:36:19.000Z",
+            "AttachmentId": "eni-attach-048fed5afcc549085",
+            "DeleteOnTermination": true,
+            "DeviceIndex": 0,
+            "Status": "attaching",
+            "NetworkCardIndex": 0
+          },
+          "Description": "",
+          "Groups": [
+            {
+              "GroupId": "sg-0701a30bb2d55da03",
+              "GroupName": "default"
+            }
+          ],
+          "Ipv6Addresses": [],
+          "MacAddress": "12:d4:3c:de:a4:b3",
+          "NetworkInterfaceId": "eni-096ace2bf363434a9",
+          "OwnerId": "293476749581",
+          "PrivateDnsName": "ip-172-31-90-146.ec2.internal",
+          "PrivateIpAddress": "172.31.90.146",
+          "PrivateIpAddresses": [
+            {
+              "Primary": true,
+              "PrivateDnsName": "ip-172-31-90-146.ec2.internal",
+              "PrivateIpAddress": "172.31.90.146"
+            }
+          ],
+          "SourceDestCheck": true,
+          "Status": "in-use",
+          "SubnetId": "subnet-039a96af3e6c16f02",
+          "VpcId": "vpc-0e3dab85475bd9e61",
+          "InterfaceType": "interface",
+          "Operator": {
+            "Managed": false
+          }
+        }
+      ],
+      "RootDeviceName": "/dev/sda1",
+      "RootDeviceType": "ebs",
+      "SecurityGroups": [
+        {
+          "GroupId": "sg-0701a30bb2d55da03",
+          "GroupName": "default"
+        }
+      ],
+      "SourceDestCheck": true,
+      "StateReason": {
+        "Code": "pending",
+        "Message": "pending"
+      },
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "test-vm-aws-2025-05-16T10-36-16"
+        }
+      ],
+      "VirtualizationType": "hvm",
+      "CpuOptions": {
+        "CoreCount": 1,
+        "ThreadsPerCore": 1
+      },
+      "CapacityReservationSpecification": {
+        "CapacityReservationPreference": "open"
+      },
+      "MetadataOptions": {
+        "State": "pending",
+        "HttpTokens": "optional",
+        "HttpPutResponseHopLimit": 1,
+        "HttpEndpoint": "enabled",
+        "HttpProtocolIpv6": "disabled",
+        "InstanceMetadataTags": "disabled"
+      },
+      "EnclaveOptions": {
+        "Enabled": false
+      },
+      "PrivateDnsNameOptions": {
+        "HostnameType": "ip-name",
+        "EnableResourceNameDnsARecord": false,
+        "EnableResourceNameDnsAAAARecord": false
+      },
+      "MaintenanceOptions": {
+        "AutoRecovery": "default"
+      },
+      "CurrentInstanceBootMode": "legacy-bios",
+      "Operator": {
+        "Managed": false
+      },
+      "InstanceId": "i-0ce19b80e0c390d5b",
+      "ImageId": "ami-0fc5d935ebf8bc3bc",
+      "State": {
+        "Code": 0,
+        "Name": "pending"
+      },
+      "PrivateDnsName": "ip-172-31-90-146.ec2.internal",
+      "PublicDnsName": "",
+      "StateTransitionReason": "",
+      "KeyName": "server-generated-key-1747391777103",
+      "AmiLaunchIndex": 0,
+      "ProductCodes": [],
+      "InstanceType": "t2.micro",
+      "LaunchTime": "2025-05-16T10:36:19.000Z",
+      "Placement": {
+        "GroupName": "",
+        "Tenancy": "default",
+        "AvailabilityZone": "us-east-1a"
+      },
+      "Monitoring": {
+        "State": "disabled"
+      },
+      "SubnetId": "subnet-039a96af3e6c16f02",
+      "VpcId": "vpc-0e3dab85475bd9e61",
+      "PrivateIpAddress": "172.31.90.146"
+    }
+  }
+}

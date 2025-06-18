@@ -1,0 +1,49 @@
+# Task ID: 1
+# Title: Refine and Enhance New VM Launch Flow
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Consolidate VM creation buttons, enhance the ProvisionVmPage with new options (SSH, startup script, network, GPU), update backend API and frontend services, and test thoroughly for AWS/GCP.
+# Details:
+Main parent task for the VM launch flow enhancement project. Subtasks will cover UI changes, backend API modifications, and testing.
+
+# Test Strategy:
+End-to-end testing of the VM creation flow for both AWS and GCP, verifying all new options are correctly applied.
+
+# Subtasks:
+## 1.1. Update 'Instances Overview' page: Consolidate VM creation buttons [pending]
+### Dependencies: None
+### Description: Remove 'Launch New Instance' button. Rename 'Provision VM' button to 'Create New VM' and ensure it links to /dashboard/instances/new.
+### Details:
+Modify final-frontend-design/src/app/dashboard/instances/page.tsx. Delete the Link component for '/launch-vm'. Update the text of the Link component for '/dashboard/instances/new'.
+
+## 1.2. Enhance 'ProvisionVmPage' UI with new configuration options [pending]
+### Dependencies: None
+### Description: Add form fields for SSH Key management, Startup Script input, Network configuration (VPC/security groups), and GPU selection to final-frontend-design/src/app/dashboard/instances/new/page.tsx.
+### Details:
+Identify appropriate UI components for each new field. Update form state and handlers. Fetch necessary data for selection (e.g., available SSH keys, VPCs, GPU types).
+
+## 1.3. Update backend API to support new VM configuration options [pending]
+### Dependencies: None
+### Description: Modify the /api/provision-vm endpoint (and its underlying service logic in main_server) to accept and process SSH Key, Startup Script, Network, and GPU parameters.
+### Details:
+Update API request validation. Extend service logic to pass new parameters to AWS/GCP SDK calls. Handle any new error conditions.
+
+## 1.4. Update frontend API service for new VM options [pending]
+### Dependencies: None
+### Description: Modify the api.provisionVm function in final-frontend-design/src/services/api.ts (or equivalent) to include the new parameters from the enhanced form.
+### Details:
+Update the payload sent by the frontend API service to match the backend expectations.
+
+## 1.5. Test enhanced VM creation flow (AWS) [pending]
+### Dependencies: None
+### Description: Perform end-to-end testing of the VM creation flow for AWS, ensuring all new options (SSH, startup script, network, GPU) are correctly applied.
+### Details:
+Create multiple AWS VMs with different combinations of the new options. Verify instance configuration in AWS console.
+
+## 1.6. Test enhanced VM creation flow (GCP) [pending]
+### Dependencies: None
+### Description: Perform end-to-end testing of the VM creation flow for GCP, ensuring all new options (SSH, startup script, network, GPU) are correctly applied.
+### Details:
+Create multiple GCP VMs with different combinations of the new options. Verify instance configuration in GCP console.
+
