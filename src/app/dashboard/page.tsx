@@ -3,18 +3,46 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/Card';
-import { api } from '@/services/api';
+import { api, ContainerResponse, ContainerStatusType, GPU, Storage } from '@/services/api';
+import LaunchModal from '@/components/LaunchModal';
+import { Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { 
+  Plus, 
+  Upload, 
+  Layout, 
+  TrendingUp, 
+  TrendingDown,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Power,
+  StopCircle,
+  Cpu,
+  Database,
+  HardDrive,
+  Activity,
+  Server
+} from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ContainerStatus {
-  status: 'running' | 'stopped' | 'loading' | 'starting' | 'stopping' | 'not_found' | 'booting';
+  id: string;
+  name: string;
+  status: ContainerStatusType;
+  template?: string;
+  gpu?: GPU;
+  storage?: Storage;
   app_url?: string;
   message?: string;
-  id?: string;
-  name?: string;
-  gpu?: {
-    name: string;
-    memory: string;
-    usage: number;
+  uptime?: string;
+  memory?: {
+    total: number;
+    used: number;
+    utilization: number;
   };
 }
 
@@ -32,6 +60,27 @@ interface LaunchStage {
   message: string;
   description: string;
   icon: JSX.Element;
+}
+
+interface ActivityItem {
+  id: string;
+  title: string;
+  description: string;
+  status: 'running' | 'completed' | 'processing';
+  timestamp: string;
+}
+
+interface SystemMetrics {
+  cpu: number;
+  memory: number;
+  storage: number;
+  network: number;
+}
+
+interface ResourceUsage {
+  current: number;
+  total: number;
+  unit: string;
 }
 
 const features = [
@@ -98,11 +147,174 @@ const launchStages: LaunchStage[] = [
   }
 ];
 
-export default function Dashboard() {
+const quickActions = [
+  {
+    name: 'Launch Instance',
+    description: 'Create a new AI instance',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+      </svg>
+    ),
+    href: '/launch',
+    color: 'from-emerald-400 to-blue-500',
+  },
+  {
+    name: 'Import Model',
+    description: 'Add a new AI model',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      </svg>
+    ),
+    href: '/models/import',
+    color: 'from-violet-400 to-purple-500',
+  },
+  {
+    name: 'View Instances',
+    description: 'Manage running instances',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+    ),
+    href: '/instances',
+    color: 'from-amber-400 to-orange-500',
+  },
+];
+
+const metrics = [
+  { name: 'Active Instances', value: '3', change: '+2', changeType: 'increase' },
+  { name: 'GPU Usage', value: '75%', change: '-5%', changeType: 'decrease' },
+  { name: 'Storage Used', value: '256GB', change: '+20GB', changeType: 'increase' },
+  { name: 'Models', value: '12', change: '+3', changeType: 'increase' },
+];
+
+const recentActivity: ActivityItem[] = [
+  {
+    id: '1',
+    title: 'ComfyUI Instance',
+    description: 'Instance started successfully',
+    status: 'running',
+    timestamp: '2 minutes ago'
+  },
+  {
+    id: '2',
+    title: 'Model Import',
+    description: 'SD XL Base imported successfully',
+    status: 'completed',
+    timestamp: '1 hour ago'
+  },
+  {
+    id: '3',
+    title: 'Storage Upgrade',
+    description: 'Upgrading storage to 500GB',
+    status: 'processing',
+    timestamp: '3 hours ago'
+  }
+];
+
+const StatusIcon = ({ status }: { status: ActivityItem['status'] }) => {
+  switch (status) {
+    case 'running':
+      return (
+        <div className="relative">
+          <div className="w-3 h-3 bg-green-500 rounded-full" />
+          <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-[ping_1s_cubic-bezier(0,0,0.2,1)_infinite]" />
+        </div>
+      );
+    case 'completed':
+      return <CheckCircle2 className="w-5 h-5 text-blue-400" />;
+    case 'processing':
+      return <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />;
+    default:
+      return null;
+  }
+};
+
+const formatResourceUsage = (usage: ResourceUsage) => {
+  const percentage = (usage.current / usage.total) * 100;
+  return {
+    value: `${usage.current} / ${usage.total} ${usage.unit}`,
+    percentage: Math.round(percentage)
+  };
+};
+
+const StatusBadge = ({ status, className = '' }: { status: ContainerStatusType; className?: string }) => {
+  const statusConfig = {
+    running: { bg: 'bg-green-500/20', text: 'text-green-400', icon: <Power className="w-4 h-4" /> },
+    stopped: { bg: 'bg-gray-500/20', text: 'text-gray-400', icon: <StopCircle className="w-4 h-4" /> },
+    loading: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: <Loader2 className="w-4 h-4 animate-spin" /> },
+    error: { bg: 'bg-red-500/20', text: 'text-red-400', icon: <AlertCircle className="w-4 h-4" /> }
+  };
+
+  const config = statusConfig[status];
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg} ${config.text} ${className}`}>
+      {config.icon}
+      <span className="text-sm font-medium capitalize">{status}</span>
+    </div>
+  );
+};
+
+const ResourceCard = ({ title, icon, usage, trend }: { 
+  title: string; 
+  icon: React.ReactNode; 
+  usage: ResourceUsage;
+  trend?: { value: number; isPositive: boolean };
+}) => {
+  const { value, percentage } = formatResourceUsage(usage);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:border-green-500/20 transition-all group"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-green-500/10 text-green-500 group-hover:bg-green-500/20 transition-colors">
+            {icon}
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">{title}</p>
+            <p className="text-2xl font-bold text-white mt-1">{value}</p>
+          </div>
+        </div>
+        {trend && (
+          <div className={`text-sm ${trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
+            {trend.isPositive ? '↑' : '↓'} {trend.value}%
+          </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-400">
+          <span>Usage</span>
+          <span>{percentage}%</span>
+        </div>
+        <div className="h-2 bg-gray-700/50 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            className={`h-full rounded-full ${
+              percentage > 90 ? 'bg-red-500' :
+              percentage > 75 ? 'bg-amber-500' :
+              'bg-green-500'
+            }`}
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const DashboardPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [containerStatus, setContainerStatus] = useState<ContainerStatus>({ 
+    id: 'initial',
+    name: 'Initial Instance',
     status: 'loading',
     message: 'Initializing...'
   });
@@ -122,9 +334,54 @@ export default function Dashboard() {
   const [launchComplete, setLaunchComplete] = useState(false);
   const [appUrl, setAppUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [instances, setInstances] = useState<ContainerStatus[]>([]);
+  const [instances, setInstances] = useState<ContainerStatus[]>([
+    {
+      id: 'comfy-1',
+      name: 'ComfyUI Instance',
+      status: 'running',
+      template: 'ComfyUI',
+      gpu: {
+        name: 'NVIDIA A10G',
+        type: 'A10G',
+        memory: 24,
+        usage: 45,
+        temperature: 65
+      },
+      storage: {
+        type: 'SSD',
+        size: 100,
+        used: 45,
+        readSpeed: 2800,
+        writeSpeed: 1900
+      },
+      memory: {
+        total: 32,
+        used: 16,
+        utilization: 50
+      },
+      uptime: '2h 15m',
+      app_url: 'http://localhost:3001'
+    },
+    {
+      id: 'sd-1',
+      name: 'Stable Diffusion',
+      status: 'stopped',
+      template: 'Stable Diffusion WebUI',
+      uptime: '0m'
+    }
+  ]);
   const [newInstanceName, setNewInstanceName] = useState('');
   const [showNewInstanceModal, setShowNewInstanceModal] = useState(false);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [selectedInstance, setSelectedInstance] = useState<ContainerStatus | null>(null);
+
+  const systemMetrics: SystemMetrics = {
+    cpu: 45,
+    memory: 60,
+    storage: 75,
+    network: 30
+  };
 
   const validateForm = (): boolean => {
     let isValid = true;
@@ -163,14 +420,51 @@ export default function Dashboard() {
 
     setIsLoading(true);
     try {
-      await api.register({ userId: user.userId, password: user.password });
+      const response = await api.register({ 
+        userId: user.userId, 
+        password: user.password 
+      });
+
+      if (response.error) {
+        setError(response.error);
+        return;
+      }
+
+      // If registration is successful, the api.register function will automatically
+      // store the server_port, userId, and password in localStorage
+
       setUser(prev => ({ ...prev, isLoggedIn: true }));
       checkContainerStatus();
+      
+      toast({
+        type: 'success',
+        title: 'Success',
+        message: 'Logged in successfully'
+      });
     } catch (err) {
       setError('Failed to login. Please try again.');
+      toast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to login'
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    setUser({
+      userId: '',
+      password: '',
+      isLoggedIn: false,
+      errors: {
+        userId: '',
+        password: ''
+      }
+    });
+    router.push('/');
   };
 
   const checkContainerStatus = async () => {
@@ -183,6 +477,55 @@ export default function Dashboard() {
       setContainerStatus(status);
     } catch (err) {
       setError('Failed to check container status');
+    }
+  };
+
+  const handleLaunchInstance = async () => {
+    setShowLaunchModal(true);
+    setCurrentStage(0);
+    setLaunchComplete(false);
+    setProgress(0);
+    setError(null);
+    setAppUrl(null);
+
+    try {
+      // Start the launch process
+      setCurrentStage(0);
+      setProgress(20);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate initialization
+
+      // Machine booting up
+      setCurrentStage(1);
+      setProgress(50);
+      const response = await api.spinContainer({
+        userId: user.userId,
+        password: user.password,
+        instanceName: newInstanceName
+      });
+
+      // Connecting to machine
+      setCurrentStage(2);
+      setProgress(80);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for connection
+
+      if (response.app_url) {
+        setAppUrl(response.app_url);
+        setProgress(100);
+        setLaunchComplete(true);
+        
+        // Add the new instance to the list
+        setInstances(prev => [...prev, {
+          status: response.status as ContainerStatus['status'],
+          app_url: response.app_url,
+          id: response.id,
+          name: newInstanceName
+        }]);
+      } else {
+        throw new Error('Failed to get instance URL');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to launch instance');
+      setProgress(0);
     }
   };
 
@@ -278,6 +621,112 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  const handleStartInstance = async (instance: ContainerStatus) => {
+    try {
+      setLoading(true);
+      // Create a complete ContainerStatus object for the loading state
+      setSelectedInstance({
+        ...instance,
+        status: 'loading',
+        message: 'Starting instance...',
+      });
+      
+      const response = await fetch(`/api/instances/${instance.id}/start`, {
+        method: 'POST',
+      });
+      const data: ContainerResponse = await response.json();
+      
+      // Update the instance status in the list
+      setInstances(prev => prev.map(inst => 
+        inst.id === instance.id ? { ...inst, ...data } : inst
+      ));
+      
+      // Update the selected instance if it's the one being started
+      if (selectedInstance?.id === instance.id) {
+        setSelectedInstance({ ...selectedInstance, ...data });
+      }
+      
+      toast({
+        type: 'success',
+        title: 'Success',
+        message: 'Instance started successfully'
+      });
+    } catch (error) {
+      console.error('Failed to start instance:', error);
+      toast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to start instance'
+      });
+      // Reset the instance state on error
+      if (selectedInstance?.id === instance.id) {
+        setSelectedInstance(instance);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStopInstance = async (instance: ContainerStatus) => {
+    try {
+      setLoading(true);
+      // Create a complete ContainerStatus object for the loading state
+      setSelectedInstance({
+        ...instance,
+        status: 'loading',
+        message: 'Stopping instance...',
+      });
+      
+      const response = await fetch(`/api/instances/${instance.id}/stop`, {
+        method: 'POST',
+      });
+      const data: ContainerResponse = await response.json();
+      
+      // Update the instance status in the list
+      setInstances(prev => prev.map(inst => 
+        inst.id === instance.id ? { ...inst, ...data } : inst
+      ));
+      
+      // Update the selected instance if it's the one being stopped
+      if (selectedInstance?.id === instance.id) {
+        setSelectedInstance({ ...selectedInstance, ...data });
+      }
+      
+      toast({
+        type: 'success',
+        title: 'Success',
+        message: 'Instance stopped successfully'
+      });
+    } catch (error) {
+      console.error('Failed to stop instance:', error);
+      toast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to stop instance'
+      });
+      // Reset the instance state on error
+      if (selectedInstance?.id === instance.id) {
+        setSelectedInstance(instance);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const password = localStorage.getItem('password');
+    
+    if (userId && password) {
+      setUser(prev => ({
+        ...prev,
+        userId,
+        password,
+        isLoggedIn: true
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     if (user.isLoggedIn) {
@@ -448,377 +897,284 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-[#111111] border-r border-[#2a2a2a] p-6">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M13 7H7v6h6V7z" />
-              <path fillRule="evenodd" d="M7 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 00-1-1H7zm4 0H9v2h2V2z" clipRule="evenodd" />
-            </svg>
+    <div className="p-8 max-w-7xl mx-auto">
+      {/* Welcome Section with System Status */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {user.userId}</h1>
+            <p className="text-gray-400">Here's what's happening with your AI instances</p>
           </div>
-          <span className="text-xl font-bold">ComfyUI</span>
-        </div>
-
-        <nav className="space-y-2">
-          <a href="#" className="flex items-center space-x-3 px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" />
-              <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>Dashboard</span>
-          </a>
-          <a href="#" className="flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-400 hover:bg-[#2a2a2a] transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-            </svg>
-            <span>Settings</span>
-          </a>
-        </nav>
-
-        <div className="absolute bottom-6 left-6 right-6">
           <button
-            onClick={() => setUser(prev => ({ ...prev, isLoggedIn: false }))}
-            className="w-full px-4 py-2 rounded-lg border border-[#2a2a2a] text-gray-400 hover:bg-[#2a2a2a] transition-colors flex items-center justify-center space-x-2"
+            onClick={() => setShowNewInstanceModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition-colors font-medium"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 11H7a1 1 0 100-2h7.586l-1.293 1.293z" clipRule="evenodd" />
-            </svg>
-            <span>Sign Out</span>
+            <Plus className="w-4 h-4" />
+            Launch New Instance
           </button>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="ml-64 p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold">Welcome, {user.userId}</h1>
-            <p className="text-gray-400 mt-1">Manage your ComfyUI instance</p>
+      {/* Resource Usage Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <ResourceCard
+          title="GPU Resources"
+          icon={<Cpu className="w-5 h-5" />}
+          usage={{ current: 16, total: 32, unit: 'GB' }}
+          trend={{ value: 12, isPositive: true }}
+        />
+        <ResourceCard
+          title="Memory Usage"
+          icon={<Database className="w-5 h-5" />}
+          usage={{ current: 192, total: 256, unit: 'GB' }}
+          trend={{ value: 5, isPositive: false }}
+        />
+        <ResourceCard
+          title="Storage Used"
+          icon={<HardDrive className="w-5 h-5" />}
+          usage={{ current: 450, total: 1000, unit: 'GB' }}
+          trend={{ value: 8, isPositive: true }}
+        />
+        <ResourceCard
+          title="Network Usage"
+          icon={<Activity className="w-5 h-5" />}
+          usage={{ current: 2.1, total: 10, unit: 'Gbps' }}
+        />
           </div>
           
-          <button className="px-4 py-2 rounded-lg bg-[#2a2a2a] text-gray-300 hover:bg-[#3a3a3a] transition-colors flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <span>Help</span>
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-6 flex items-center space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {instances.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
-            {/* Launch New App Section */}
-            <div className="text-center mb-16">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl mx-auto flex items-center justify-center mb-6 transform rotate-45 group-hover:scale-110 transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white -rotate-45" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-3">Launch your New App</h2>
-              <p className="text-gray-400 text-lg mb-8 max-w-md mx-auto">Start your ComfyUI instance and begin creating amazing AI-powered experiences</p>
-              <button
-                onClick={() => setShowNewInstanceModal(true)}
-                className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-3 mx-auto"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                </svg>
-                <span>Launch Instance</span>
-              </button>
+      {/* System Health */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">System Health</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Performance Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10"
+          >
+            <h3 className="text-lg font-medium text-white mb-4">Performance Metrics</h3>
+            <div className="space-y-4">
+              {Object.entries(systemMetrics).map(([key, value]) => (
+                <div key={key} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400 capitalize">{key}</span>
+                    <span className="text-white">{value}%</span>
             </div>
-
-            {/* Feature Boxes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {/* Image Generation Box */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a] transform transition-all duration-300 hover:scale-[1.02] hover:border-pink-500/50">
-                <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                  </svg>
+                  <div className="h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${value}%` }}
+                      className={`h-full rounded-full ${
+                        value > 90 ? 'bg-red-500' :
+                        value > 75 ? 'bg-amber-500' :
+                        'bg-green-500'
+                      }`}
+                    />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Image Generation</h3>
-                <p className="text-gray-400 text-sm mb-4">Create stunning AI-generated images with advanced models and customizable workflows</p>
-                <div className="flex items-center text-pink-400 text-sm">
-                  <span>Learn more</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
                 </div>
+              ))}
               </div>
+          </motion.div>
 
-              {/* Video Generation Box */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a] transform transition-all duration-300 hover:scale-[1.02] hover:border-green-500/50">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-500 rounded-lg flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Video Generation</h3>
-                <p className="text-gray-400 text-sm mb-4">Transform your ideas into captivating videos with AI-powered animation and effects</p>
-                <div className="flex items-center text-green-400 text-sm">
-                  <span>Coming soon</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Cloud Deployment Box */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a] transform transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/50">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Cloud Deployment</h3>
-                <p className="text-gray-400 text-sm mb-4">Deploy your models to the cloud with one click and scale automatically based on demand</p>
-                <div className="flex items-center text-purple-400 text-sm">
-                  <span>Explore features</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Existing grid of instances code
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* New Instance Card */}
-            <div 
-              onClick={() => setShowNewInstanceModal(true)}
-              className="bg-[#1a1a1a] border border-dashed border-[#2a2a2a] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500/50 hover:bg-[#1f1f1f] transition-all duration-300 group"
-            >
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Launch New Instance</h3>
-              <p className="text-gray-400 text-sm text-center">Create a new ComfyUI instance</p>
-            </div>
-
-            {/* Instance Cards */}
-            {instances.map((instance, index) => (
-              <div key={instance.id || index} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M13 7H7v6h6V7z" />
-                          <path fillRule="evenodd" d="M7 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 00-1-1H7zm4 0H9v2h2V2z" clipRule="evenodd" />
-                        </svg>
-                      </div>
+          {/* Active Instances Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10"
+          >
+            <h3 className="text-lg font-medium text-white mb-4">Active Instances</h3>
+            <div className="space-y-4">
+              {instances.map((instance) => (
+                <div key={instance.id} className="flex flex-col bg-black/20 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between p-4 border-b border-white/5">
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={instance.status} />
                       <div>
-                        <h3 className="font-semibold text-white">{instance.name || `Instance ${index + 1}`}</h3>
-                        <div className="flex items-center space-x-2">
-                          <div className={`h-2 w-2 rounded-full ${
-                            instance.status === 'running' ? 'bg-green-400 animate-[pulse_1s_ease-in-out_infinite]' :
-                            instance.status === 'starting' || instance.status === 'booting' ? 'bg-yellow-400 animate-[pulse_1s_ease-in-out_infinite]' :
-                            'bg-red-400'
-                          }`} />
-                          <span className={`text-sm ${
-                            instance.status === 'running' ? 'text-green-400' :
-                            instance.status === 'starting' || instance.status === 'booting' ? 'text-yellow-400' :
-                            'text-red-400'
-                          }`}>
-                            {getStatusDisplay(instance.status)}
+                        <h4 className="text-white font-medium">{instance.name}</h4>
+                        <p className="text-sm text-gray-400">{instance.template}</p>
+                </div>
+                </div>
+                    <div className="flex items-center gap-4">
+                      {instance.status === 'running' && (
+                        <>
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <Clock className="w-4 h-4" />
+                            <span className="text-sm">{instance.uptime}</span>
+              </div>
+                          <a
+                            href={instance.app_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm hover:bg-green-500/30 transition-colors"
+                          >
+                            Open App
+                          </a>
+                        </>
+                      )}
+                      <button
+                        onClick={() => instance.status === 'running' ? handleStopInstance(instance) : handleStartInstance(instance)}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                          instance.status === 'running'
+                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                            : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                        }`}
+                      >
+                        {instance.status === 'running' ? 'Stop' : 'Start'}
+                      </button>
+                </div>
+                </div>
+                  {instance.status === 'running' && instance.gpu && (
+                    <div className="p-4 grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">GPU Usage</span>
+                          <span className="text-white">{instance.gpu.usage}%</span>
+              </div>
+                        <div className="h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 rounded-full"
+                            style={{ width: `${instance.gpu.usage}%` }}
+                          />
+            </div>
+                        <p className="text-xs text-gray-400">{instance.gpu.name} ({instance.gpu.memory}GB)</p>
+          </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Memory</span>
+                          <span className="text-white">{instance.memory?.utilization}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{ width: `${instance.memory?.utilization}%` }}
+                          />
+              </div>
+                        <p className="text-xs text-gray-400">{instance.memory?.used}GB / {instance.memory?.total}GB</p>
+            </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Storage</span>
+                          <span className="text-white">
+                            {instance.storage ? Math.round((instance.storage.used / instance.storage.size) * 100) : 0}%
                           </span>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* GPU Status */}
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center space-x-2 text-sm text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                        </svg>
-                        <span>{instance.gpu?.name || 'NVIDIA T4'}</span>
-                      </div>
-                      <div className="mt-1 flex items-center space-x-2">
-                        <div className="h-1.5 w-24 bg-[#2a2a2a] rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-700/50 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-300"
-                            style={{ width: `${instance.gpu?.usage || 0}%` }}
+                            className="h-full bg-purple-500 rounded-full"
+                            style={{ 
+                              width: instance.storage 
+                                ? `${Math.round((instance.storage.used / instance.storage.size) * 100)}%`
+                                : '0%'
+                            }}
                           />
                         </div>
-                        <span className="text-xs text-gray-400">{instance.gpu?.memory || '16GB'}</span>
+                        <p className="text-xs text-gray-400">
+                          {instance.storage ? `${instance.storage.used}GB / ${instance.storage.size}GB` : 'N/A'}
+                        </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {instance.status === 'running' && instance.app_url && (
-                      <a
-                        href={instance.app_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-2 text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                        </svg>
-                        <span className="truncate">{instance.app_url}</span>
-                      </a>
-                    )}
-                    
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartContainer(instance.id);
-                        }}
-                        disabled={isLoading || instance.status === 'running' || instance.status === 'starting' || instance.status === 'booting'}
-                        className="flex-1 px-3 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                        </svg>
-                        <span>Start</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStopContainer(instance.id);
-                        }}
-                        disabled={isLoading || instance.status === 'stopped' || instance.status === 'stopping'}
-                        className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
-                        </svg>
-                        <span>Stop</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  )}
               </div>
             ))}
           </div>
-        )}
+          </motion.div>
+        </div>
       </div>
 
-      {/* New Instance Modal */}
-      {showNewInstanceModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8 max-w-md w-full mx-4">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl mx-auto flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link href="/launch" className="group">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:border-green-500/50 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg bg-green-500/10 text-green-500 group-hover:bg-green-500/20 transition-colors">
+                  <Plus className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Launch New Instance</h3>
-              <p className="text-gray-400">Create a new ComfyUI instance</p>
+                <div>
+                  <h3 className="text-lg font-medium text-white">Launch Instance</h3>
+                  <p className="text-sm text-gray-400">Create a new AI instance</p>
             </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-gray-400 mb-2 text-sm font-medium">Instance Name</label>
-                <input
-                  type="text"
-                  value={newInstanceName}
-                  onChange={(e) => setNewInstanceName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-[#1f1f1f] border border-[#2a2a2a] focus:border-blue-500 text-white transition-all duration-300"
-                  placeholder="Enter instance name"
-                />
               </div>
+            </motion.div>
+          </Link>
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowNewInstanceModal(false)}
-                  className="flex-1 px-4 py-3 rounded-lg border border-[#2a2a2a] text-gray-400 hover:bg-[#2a2a2a] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    handleStartContainer();
-                    setShowNewInstanceModal(false);
-                  }}
-                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium transition-all duration-300"
-                >
-                  Launch Instance
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Launch Sequence Modal */}
-      {showLaunchModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8 max-w-md w-full mx-4">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl mx-auto flex items-center justify-center mb-4">
-                {launchStages[currentStage].icon}
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">{launchStages[currentStage].message}</h3>
-              <p className="text-gray-400">{launchStages[currentStage].description}</p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden mb-6">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            {/* Stage Indicators */}
-            <div className="grid grid-cols-3 gap-4">
-              {launchStages.map((stage, index) => (
-                <div 
-                  key={stage.message}
-                  className={`p-4 rounded-lg border ${
-                    index === currentStage ? 'border-blue-500/50 bg-blue-500/10' :
-                    progress >= ((index + 1) * 33.33) ? 'border-green-500/50 bg-green-500/10' :
-                    'border-[#2a2a2a] bg-[#222]'
-                  } transition-all duration-300`}
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    {progress >= ((index + 1) * 33.33) ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    ) : index === currentStage ? (
-                      <svg className="animate-spin h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    ) : (
-                      <div className="h-5 w-5 rounded-full border-2 border-[#2a2a2a]" />
-                    )}
-                  </div>
-                  <p className="text-xs text-center text-gray-400">{stage.message}</p>
+          <Link href="/models" className="group">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:border-purple-500/50 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg bg-purple-500/10 text-purple-500 group-hover:bg-purple-500/20 transition-colors">
+                  <Upload className="w-6 h-6" />
                 </div>
-              ))}
+              <div>
+                  <h3 className="text-lg font-medium text-white">Import Model</h3>
+                  <p className="text-sm text-gray-400">Add a new AI model</p>
+              </div>
+              </div>
+            </motion.div>
+          </Link>
+
+          <Link href="/instances" className="group">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-black/20 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:border-amber-500/50 transition-all cursor-pointer"
+                >
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20 transition-colors">
+                  <Layout className="w-6 h-6" />
+              </div>
+                <div>
+                  <h3 className="text-lg font-medium text-white">View Instances</h3>
+                  <p className="text-sm text-gray-400">Manage running instances</p>
+            </div>
+          </div>
+            </motion.div>
+          </Link>
+        </div>
             </div>
 
-            {launchComplete && (
-              <div className="mt-6 text-center">
-                <p className="text-green-400 mb-2">Launch Complete!</p>
-                <p className="text-sm text-gray-400">Redirecting to your instance...</p>
+      {/* Recent Activity */}
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-4">Recent Activity</h2>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-black/20 backdrop-blur-lg rounded-xl border border-white/10"
+        >
+          {recentActivity.map((activity, index) => (
+                <div 
+              key={activity.id}
+              className={`p-4 flex items-center justify-between ${
+                index !== recentActivity.length - 1 ? 'border-b border-white/5' : ''
+              }`}
+                >
+              <div className="flex items-center gap-4">
+                <StatusIcon status={activity.status} />
+                <div>
+                  <h3 className="text-white font-medium">{activity.title}</h3>
+                  <p className="text-sm text-gray-400">{activity.description}</p>
+                  </div>
+                </div>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Clock className="w-4 h-4" />
+                {activity.timestamp}
+            </div>
               </div>
-            )}
+          ))}
+        </motion.div>
           </div>
-        </div>
-      )}
     </div>
   );
 } 
+
+export default DashboardPage; 

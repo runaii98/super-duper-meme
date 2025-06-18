@@ -1,16 +1,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { FileManager } from './FileManager';
 
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const navigation = [
+interface NavigationItem {
+  name: string;
+  href?: string;
+  icon: string;
+  isAction?: boolean;
+}
+
+const navigation: NavigationItem[] = [
   {
     name: 'My Apps',
     href: '/dashboard',
     icon: '📱',
+  },
+  {
+    name: 'File Manager',
+    icon: '📁',
+    isAction: true,
   },
   {
     name: 'Discover',
@@ -32,17 +46,15 @@ const navigation = [
     href: '/payments',
     icon: '💳',
   },
-  {
-    name: 'Billing',
-    href: '/billing',
-    icon: '💰',
-  },
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
+  const [isFileManagerOpen, setIsFileManagerOpen] = useState(false);
+  const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
 
   return (
+    <>
     <div
       className={`${
         isOpen ? 'w-64' : 'w-20'
@@ -75,8 +87,17 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <ul className="space-y-1">
             {navigation.map((item) => (
               <li key={item.name}>
+                  {item.isAction ? (
+                    <button
+                      onClick={() => setIsFileManagerOpen(true)}
+                      className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors text-gray-400 hover:bg-[#2a2a2a] hover:text-white`}
+                    >
+                      <span className="text-xl mr-3">{item.icon}</span>
+                      {isOpen && <span>{item.name}</span>}
+                    </button>
+                  ) : (
                 <Link
-                  href={item.href}
+                      href={item.href || '#'}
                   className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
                     pathname === item.href
                       ? 'bg-[#2a2a2a] text-white'
@@ -86,6 +107,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   <span className="text-xl mr-3">{item.icon}</span>
                   {isOpen && <span>{item.name}</span>}
                 </Link>
+                  )}
               </li>
             ))}
           </ul>
@@ -106,5 +128,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         </div>
       </div>
     </div>
+
+      {/* File Manager Modal */}
+      {isFileManagerOpen && (
+        <FileManager
+          isOpen={isFileManagerOpen}
+          onClose={() => setIsFileManagerOpen(false)}
+          containerId={selectedContainerId || 'default'}
+          bucketName="comfyui-storage"
+        />
+      )}
+    </>
   );
 } 

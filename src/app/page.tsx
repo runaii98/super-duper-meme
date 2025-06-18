@@ -10,7 +10,6 @@ import Globe from '@/components/Globe';
 import TemplateSection from '@/components/TemplateSection';
 import AppsGrid from '@/components/AppsGrid';
 import Features from '@/components/Features';
-import Testimonials from '@/components/Testimonials';
 
 type UsabilityLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
 type GpuType = 'T4' | 'L4' | 'A40' | 'A100' | 'H100';
@@ -778,9 +777,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <Testimonials />
-
       {/* Hardware Section */}
       <section className="py-24 bg-black relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -884,6 +880,47 @@ export default function Home() {
 
       {/* New Enhanced Features Section */}
       <Features />
+
+      {/* Testimonials Section */}
+      <section className="py-24 bg-black">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-[#1cfeba]/10 rounded-full px-4 py-1 mb-4">
+              <p className="text-[#1cfeba] text-sm font-mono uppercase tracking-wider">/TESTIMONIALS</p>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              Trusted by Developers Worldwide
+            </h2>
+            </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-[#1a1a1a] rounded-xl p-8 border border-[#2a2a2a]">
+                <div className="h-32 flex items-start">
+                  <p className="text-gray-300 text-lg italic">"{testimonial.quote}"</p>
+                </div>
+                <div className="mt-8 flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+                      <Image
+                        src={testimonial.company}
+                        alt={testimonial.author}
+                        width={32}
+                        height={32}
+                        className="opacity-75"
+                      />
+              </div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-white font-medium">{testimonial.author}</div>
+                    <div className="text-gray-400 text-sm">{testimonial.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* New Pricing Section */}
       <section className="py-24 bg-[#0f0f0f] relative overflow-hidden">
@@ -1145,7 +1182,7 @@ export default function Home() {
               </Link>
               <Link href="https://github.com/comfyui" className="text-gray-400 hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.708.069-.708 1.003.07 1.7 1.032 1.531 1.032.892 1.53 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.6-.3-5.4-1.3-5.4-5.8 0-1.3.5-2.3 1.1-3.1-.1-.3-.5-1.5.1-3.2 0 0 .9-.3 3 1.1a10.4 10.4 0 0 1 5.5 0c2.1-1.4 3-1.1 3-1.1.6 1.7.2 2.9.1 3.2.7.8 1.1 1.8 1.1 3.1 0 4.5-2.8 5.5-5.4 5.8.4.3.7.9.7 1.9v2.8c0 .3.2.7.8.6A12 12 0 0 0 12 .25z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.708.069-.708 1.003.07 1.7 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.3-5.4-1.3-5.4-5.8 0-1.3.5-2.3 1.1-3.1-.1-.3-.5-1.5.1-3.2 0 0 .9-.3 3 1.1a10.4 10.4 0 0 1 5.5 0c2.1-1.4 3-1.1 3-1.1.6 1.7.2 2.9.1 3.2.7.8 1.1 1.8 1.1 3.1 0 4.5-2.8 5.5-5.4 5.8.4.3.7.9.7 1.9v2.8c0 .3.2.7.8.6A12 12 0 0 0 12 .25z" clipRule="evenodd" />
                 </svg>
               </Link>
               <Link href="https://discord.gg/comfyui" className="text-gray-400 hover:text-white transition-colors">
