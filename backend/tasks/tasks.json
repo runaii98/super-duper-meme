@@ -1,0 +1,76 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Refine and Enhance New VM Launch Flow",
+      "description": "Consolidate VM creation buttons, enhance the ProvisionVmPage with new options (SSH, startup script, network, GPU), update backend API and frontend services, and test thoroughly for AWS/GCP.",
+      "status": "pending",
+      "priority": "high",
+      "dependencies": [],
+      "details": "Main parent task for the VM launch flow enhancement project. Subtasks will cover UI changes, backend API modifications, and testing.",
+      "testStrategy": "End-to-end testing of the VM creation flow for both AWS and GCP, verifying all new options are correctly applied.",
+      "subtasks": [
+        {
+          "id": "1.1",
+          "title": "Update 'Instances Overview' page: Consolidate VM creation buttons",
+          "description": "Remove 'Launch New Instance' button. Rename 'Provision VM' button to 'Create New VM' and ensure it links to /dashboard/instances/new.",
+          "status": "done",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Modify final-frontend-design/src/app/dashboard/instances/page.tsx. Delete the Link component for '/launch-vm'. Update the text of the Link component for '/dashboard/instances/new'.",
+          "testStrategy": "Verify the 'Instances Overview' page displays only one button for VM creation, labelled correctly, and linking to the correct page."
+        },
+        {
+          "id": "1.2",
+          "title": "Enhance 'ProvisionVmPage' UI with new configuration options",
+          "description": "Add form fields for SSH Key management, Startup Script input, Network configuration (VPC/security groups), and GPU selection to final-frontend-design/src/app/dashboard/instances/new/page.tsx.",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Identify appropriate UI components for each new field. Update form state and handlers. Fetch necessary data for selection (e.g., available SSH keys, VPCs, GPU types).",
+          "testStrategy": "Review the 'ProvisionVmPage' to ensure all new fields are present, functional, and user-friendly."
+        },
+        {
+          "id": "1.3",
+          "title": "Update backend API to support new VM configuration options",
+          "description": "Modify the /api/provision-vm endpoint (and its underlying service logic in main_server) to accept and process SSH Key, Startup Script, Network, and GPU parameters.",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Update API request validation. Extend service logic to pass new parameters to AWS/GCP SDK calls. Handle any new error conditions.",
+          "testStrategy": "Test the API endpoint directly with payloads including the new parameters. Verify correct interaction with cloud provider SDKs (mocked or actual)."
+        },
+        {
+          "id": "1.4",
+          "title": "Update frontend API service for new VM options",
+          "description": "Modify the api.provisionVm function in final-frontend-design/src/services/api.ts (or equivalent) to include the new parameters from the enhanced form.",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Update the payload sent by the frontend API service to match the backend expectations.",
+          "testStrategy": "Verify that the frontend service call correctly sends all new parameters to the backend."
+        },
+        {
+          "id": "1.5",
+          "title": "Test enhanced VM creation flow (AWS)",
+          "description": "Perform end-to-end testing of the VM creation flow for AWS, ensuring all new options (SSH, startup script, network, GPU) are correctly applied.",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Create multiple AWS VMs with different combinations of the new options. Verify instance configuration in AWS console.",
+          "testStrategy": "Successful provisioning of AWS VMs with all specified configurations."
+        },
+        {
+          "id": "1.6",
+          "title": "Test enhanced VM creation flow (GCP)",
+          "description": "Perform end-to-end testing of the VM creation flow for GCP, ensuring all new options (SSH, startup script, network, GPU) are correctly applied.",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Create multiple GCP VMs with different combinations of the new options. Verify instance configuration in GCP console.",
+          "testStrategy": "Successful provisioning of GCP VMs with all specified configurations."
+        }
+      ]
+    }
+  ]
+}

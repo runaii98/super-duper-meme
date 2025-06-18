@@ -1,0 +1,8 @@
+{
+    "vcpu": 4,
+    "ram_gb": 259,
+    "storage_type": "ssd",
+    "storage_gb": 15000,
+    "user_ip_address": "8.8.8.8",
+    "preference": "price"
+} 

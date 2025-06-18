@@ -1,0 +1,63 @@
+Product Requirements Document: VM Monitoring and Logging API
+
+1.  **Introduction**
+    This document outlines the requirements for a new API service designed to monitor and log key metrics and events from provisioned Virtual Machines (VMs) across AWS and Google Cloud Platform (GCP).
+
+2.  **Goals**
+    *   Provide a centralized system for collecting VM performance data and logs.
+    *   Enable efficient storage and retrieval of monitoring information.
+    *   Support both AWS and GCP cloud environments.
+    *   Ensure secure data handling and transmission.
+
+3.  **Key Features**
+
+    3.1. **Data Ingestion API Endpoints**
+        *   Develop a secure API endpoint to receive monitoring data from VMs.
+            *   Supported metrics: CPU utilization, memory usage, disk I/O, network traffic.
+            *   Data format: JSON.
+        *   Develop a secure API endpoint to receive log data from VMs.
+            *   Log format: Plain text or structured JSON.
+
+    3.2. **Cloud Provider Integration**
+        *   **AWS:**
+            *   Integrate with AWS CloudWatch for metric collection.
+            *   Utilize the AWS SDK for Node.js.
+            *   Configure CloudWatch Agent on EC2 instances to send metrics.
+        *   **GCP:**
+            *   Integrate with GCP Cloud Monitoring (Ops Agent) for metric and log collection.
+            *   Utilize the GCP SDK for Node.js.
+            *   Configure Ops Agent on Compute Engine instances to send metrics and logs.
+
+    3.3. **Data Storage**
+        *   Design a database schema to store time-series monitoring data and logs.
+            *   Consider fields for: timestamp, VM ID, metric name, metric value, log level, log message, source (AWS/GCP).
+        *   Implement database connection and data insertion logic. (Specific database technology to be decided, but assume a relational DB for now).
+
+    3.4. **Data Retrieval (Basic)**
+        *   Develop an internal API or service function to query stored monitoring data by VM ID and time range.
+        *   Develop an internal API or service function to query stored logs by VM ID, time range, and log level.
+
+    3.5. **Security**
+        *   All API endpoints must be secured (e.g., using API keys or token-based authentication).
+        *   Ensure secure transmission of data from VMs to the API (HTTPS).
+
+4.  **Technical Stack (Proposed)**
+    *   Backend: Node.js
+    *   Framework: Express.js (or similar)
+    *   Database: (To be determined - e.g., PostgreSQL, MySQL, or a NoSQL option like InfluxDB for time-series data)
+    *   Cloud SDKs: AWS SDK for JavaScript v3, Google Cloud Client Libraries for Node.js.
+
+5.  **Non-Functional Requirements**
+    *   Scalability: The system should be designed to handle data from a growing number of VMs.
+    *   Reliability: Ensure data ingestion and storage are reliable.
+    *   Maintainability: Code should be well-structured and documented.
+
+6.  **Out of Scope (Initial Version)**
+    *   Advanced analytics or alerting features.
+    *   User interface for viewing monitoring data.
+    *   Automated VM agent deployment/configuration.
+
+7.  **Future Considerations**
+    *   Support for other cloud providers (e.g., Azure).
+    *   Integration with a dedicated logging platform (e.g., ELK stack).
+    *   Real-time alerting based on metric thresholds. 

@@ -1,0 +1,118 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local Environment Variables - IMPORTANT!
+.env
+.env.*.local
+.env.local
+# DO NOT ignore .env.example or similar template files
+
+# Secrets and Sensitive Keys
+# *.pem files are private keys and should not be committed.
+*.pem
+
+# Node.js (applies to final-frontend-design and potentially other Node projects)
+node_modules/
+.pnp
+.pnp.js
+/coverage/ # Test coverage
+# Next.js specific
+/.next/
+/out/
+# General build output
+/build/
+.turbo/
+
+# Python (if main_server or other parts use Python)
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+.Python
+# build/ # Covered by general build output
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Docker specific
+# The docker_archive/ directory is being kept as per previous discussions.
+# If it becomes a build artifact or temporary backup, it could be added here.
+
+# Project Specific Generated Files
+# Add patterns for any other generated files or directories
+main_server/cache/
+# Example: if you have local SQLite DBs for testing in main_server/database/
+# main_server/database/*.db
+
+# Test outputs or temporary files from your scripts
+test_instance_info_deleted_*.json
+vm_result.json
+
+# Java (if any part uses Java/Maven/Gradle)
+*.class
+*.jar
+*.war
+*.ear
+# target/ # Often a build output directory
+.classpath
+.project
+.settings/
+# build/ # Already covered
+.gradle/
+
+# Dotnet (if any part uses Dotnet)
+# bin/ # Often build output
+# obj/ # Often build output
+
+# Logs
+logs
+dev-debug.log
+
+# Credentials
+main_server/credentials/aws.json
+main_server/credentials/gcp.json
+main_server/credentials/glassy-fort-416908-584e0066c012.json 

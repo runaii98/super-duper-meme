@@ -1,6 +1,20 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RunAII.cloud - Next.js Frontend
+
+## Overview
+RunAII.cloud is a cloud platform that leverages artificial intelligence to optimize and manage computing resources for AI workloads. The platform provides seamless integration of AI capabilities with cloud infrastructure, enabling efficient deployment, scaling, and monitoring of AI applications.
+
+## Features
+
+- **AI Resource Optimization**: Automatically allocates and optimizes computing resources based on workload requirements
+- **Intelligent Scaling**: Dynamic scaling of resources based on real-time demand and performance metrics
+- **Workload Management**: Comprehensive tools for managing AI workloads across different environments
+- **Cost Optimization**: Smart resource allocation to minimize costs while maintaining performance
+- **Monitoring & Analytics**: Real-time insights into resource utilization and application performance
+- **Security & Compliance**: Enterprise-grade security features with compliance certifications
 
 ## Getting Started
+
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 First, run the development server:
 
@@ -27,10 +41,14 @@ To learn more about Next.js, take a look at the following resources:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+Comprehensive documentation is available at [docs.runaii.cloud](https://docs.runaii.cloud).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Support
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For technical support, please contact support@runaii.cloud or visit our [support portal](https://support.runaii.cloud).
+
+## License
+
+Copyright © 2023-2025 RunAII.cloud. All rights reserved.

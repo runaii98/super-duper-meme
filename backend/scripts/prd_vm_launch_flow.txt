@@ -1,0 +1,37 @@
+Product Requirements Document: VM Launch Flow Enhancement
+
+1.  **Objective**: Refine and enhance the existing Virtual Machine (VM) creation process in the RunAI platform. The goal is to provide a more intuitive and comprehensive user experience for launching new VMs.
+
+2.  **Current State**:
+    *   The "Instances Overview" page (`final-frontend-design/src/app/dashboard/instances/page.tsx`) has two buttons: "Launch New Instance" (links to `/launch-vm`) and "Provision VM" (links to `/dashboard/instances/new`).
+    *   The `/dashboard/instances/new` page (`final-frontend-design/src/app/dashboard/instances/new/page.tsx`) already contains a form for VM provisioning with options for provider (AWS/GCP), instance name, type, OS, region/zone, storage, pricing, and tags. It calls an API endpoint `api.provisionVm`.
+
+3.  **Requirements**:
+    3.1. **Button Consolidation**:
+        3.1.1. On the "Instances Overview" page, remove the "Launch New Instance" button.
+        3.1.2. Rename the "Provision VM" button to "Create New VM" (or similar). This button will remain linked to `/dashboard/instances/new`.
+    3.2. **Enhance VM Configuration Form (`ProvisionVmPage`)**:
+        3.2.1. Review and identify missing essential VM configuration options.
+        3.2.2. Add the following fields to the form (and corresponding backend API):
+            *   SSH Key selection/management (e.g., select existing, upload new, or generate new).
+            *   Startup Script input (textarea for user-provided scripts).
+            *   Network configuration (e.g., VPC selection, security groups - if applicable and simple enough for initial version).
+            *   GPU selection (if `instance_type` is not sufficient, allow specific GPU model choices based on availability for the selected provider/region/instance_type).
+    3.3. **Backend API Updates**:
+        3.3.1. Modify the existing `api.provisionVm` backend endpoint (and its service logic) to accept and process the new configuration options (SSH Key, Startup Script, Network, GPU).
+        3.3.2. Ensure the backend correctly passes these new parameters to the respective cloud provider SDKs (AWS, GCP).
+    3.4. **Frontend API Service Update**:
+        3.4.1. Update the frontend `api.provisionVm` service call in `final-frontend-design/src/services/api.ts` (or equivalent) to include the new parameters from the form.
+    3.5. **Testing**:
+        3.5.1. Thoroughly test the enhanced VM creation flow for both AWS and GCP providers.
+        3.5.2. Verify that all new options are correctly applied to the provisioned VMs.
+
+4.  **User Experience Goals**:
+    *   The VM creation process should be clear and straightforward.
+    *   Users should have access to essential configuration options without being overwhelmed.
+    *   Feedback during the provisioning process should be clear (e.g., loading states, success/error messages).
+
+5.  **Out of Scope (for this iteration)**:
+    *   Advanced networking configurations.
+    *   Complex multi-VM deployment scenarios.
+    *   Saving VM configurations as templates (unless trivial to add). 
