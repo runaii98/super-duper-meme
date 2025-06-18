@@ -1,0 +1,93 @@
+# Quick Start Guide
+
+Get started with ComfyUI in minutes. This guide will help you deploy your first application.
+
+## Prerequisites
+
+- Node.js 18 or later
+- npm or yarn package manager
+- A ComfyUI account
+
+## Installation
+
+Install the ComfyUI CLI globally:
+
+```bash
+npm install -g @comfyui/cli
+```
+
+## Authentication
+
+Log in to your ComfyUI account:
+
+```bash
+comfy login
+```
+
+## Create a New Project
+
+Create a new project using our starter template:
+
+```bash
+comfy create my-app
+cd my-app
+```
+
+## Deploy Your App
+
+Deploy your application globally with a single command:
+
+```bash
+comfy deploy
+```
+
+Your app will be available at `https://my-app.comfyui.app`
+
+## Next Steps
+
+- [Configure your application](/docs/getting-started/configuration)
+- [Add custom domains](/docs/getting-started/domains)
+- [Set up environment variables](/docs/getting-started/env-vars)
+
+## Example: Deploy a Next.js App
+
+Here's a complete example of deploying a Next.js application:
+
+```bash
+# Create a new Next.js project
+npx create-next-app@latest my-nextjs-app
+cd my-nextjs-app
+
+# Initialize ComfyUI
+comfy init
+
+# Deploy globally
+comfy deploy --prod
+```
+
+## Available Commands
+
+| Command | Description |
+| --- | --- |
+| `comfy init` | Initialize a new ComfyUI project |
+| `comfy dev` | Start development server |
+| `comfy deploy` | Deploy your application |
+| `comfy logs` | View application logs |
+| `comfy scale` | Configure scaling options |
+
+## GPU Configuration
+
+Select your GPU configuration in `comfy.config.js`:
+
+```javascript
+module.exports = {
+  compute: {
+    gpu: 'T4',    // or 'L4', 'A40', 'A100'
+    memory: '16GB' // GPU memory allocation
+  },
+  scaling: {
+    min: 1,
+    max: 10
+  }
+}
+``` 
